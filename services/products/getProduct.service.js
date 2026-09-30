@@ -1,9 +1,8 @@
 import { product } from "../../adapter/product.adaptors.js";
 
-export async function getProductService(page = 1) {
-  page = Number(page);
+export async function getProductService(lastItemId) {
   const limit = 10;
-  const skip = limit * (page - 1);
-  const result = await product.getProduct({ limit, skip });
+  const query = lastItemId ? { _id: { $gt: lastItemId } } : {};
+  const result = await product.getProduct({ limit, query });
   return result;
 }
