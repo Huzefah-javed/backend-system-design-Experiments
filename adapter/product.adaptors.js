@@ -5,7 +5,7 @@ export const product = {
     await Product.find(query).sort({ _id: 1 }).limit(limit),
 
   getFilterProduct: async ({ filterQuery, sort }) =>
-    await Product.find(filterQuery)
+    await Product.find(filterQuery, { category: 1, price: 1, _id: 0 })
       .sort(sort)
       .explain("executionStats"),
 };
