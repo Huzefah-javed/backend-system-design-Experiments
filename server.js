@@ -3,6 +3,7 @@ import { dbConnects } from "./configs/db.config.js";
 import { config } from "dotenv";
 import { error } from "./middlewares/error.middleware.js";
 import { mainRouter } from "./routers/main.routers.js";
+import { redisConnect } from "./configs/redis.config.js";
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(mainRouter);
 app.use(error);
 
 await dbConnects();
+await redisConnect();
 
 app.listen(process.env.PORT, () => {
   console.log("server runs....", process.env.PORT);
