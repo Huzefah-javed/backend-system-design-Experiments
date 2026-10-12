@@ -17,13 +17,13 @@ export async function getFilterProducts(req, res) {
     minPrice,
   });
 
-  res.status(200).json({
-    executionTimeMillis: data.executionStats?.executionTimeMillis,
-    nReturned: data.executionStats?.nReturned,
-    totalDocsExamined: data.executionStats?.totalDocsExamined,
-    totalKeysExamined: data.executionStats?.totalKeysExamined,
-    skipAmount: data.queryPlanner?.winningPlan?.inputStage?.skipAmount,
-  });
+  // res.status(200).json({
+  //   executionTimeMillis: data.executionStats?.executionTimeMillis,
+  //   nReturned: data.executionStats?.nReturned,
+  //   totalDocsExamined: data.executionStats?.totalDocsExamined,
+  //   totalKeysExamined: data.executionStats?.totalKeysExamined,
+  //   skipAmount: data.queryPlanner?.winningPlan?.inputStage?.skipAmount,
+  // });
 
-  // res.status(200).json(data);
+  res.status(200).json(data);
 }

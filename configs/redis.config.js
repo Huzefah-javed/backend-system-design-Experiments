@@ -9,3 +9,4 @@ export async function redisConnect() {
 }
 
 export const oneDayInSecs = 24 * 60 * 60;
+export const hoyKeyTime =  30;
