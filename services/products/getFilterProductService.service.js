@@ -46,28 +46,25 @@ export async function getFilterProductService({
   let data = await client.get(redisKey);
   if (data) return JSON.parse(data);
 
-  let isLock = await client.get("productFilter:reqLock");
-  if (!isLock) {
-    await client.set("productFilter:reqLock", JSON.stringify(false), {
-      EX: hoyKeyTime / 2,
-    });
+  
+  let isLock = await client.set("productFilter:reqLock", "lock", {
+    NX: true,
+    EX: hoyKeyTime / 2,
+  });
+  while (isLock === null || isLock === "lock") {
     isLock = await client.get("productFilter:reqLock");
   }
-  while (JSON.parse(isLock));
 
   data = await client.get(redisKey);
   if (data) return JSON.parse(data);
 
-  await client.set("productFilter:reqLock", JSON.stringify(true), {
-    EX: hoyKeyTime / 2,
-  });
-
-  console.log("im that MF");
+  console.log("Heading toward db");
 
   const result = await product.getFilterProduct({ filterQuery, sort });
   await client.set(redisKey, JSON.stringify(result), { EX: hoyKeyTime });
-  await client.set("productFilter:reqLock", JSON.stringify(false), {
+  await client.set("productFilter:reqLock", "unLock", {
     EX: hoyKeyTime / 2,
+    NX: true,
   });
 
   return result;
