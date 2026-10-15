@@ -1,5 +1,6 @@
 import { product } from "../../adapter/product.adaptors.js";
 import { client, hoyKeyTime } from "../../configs/redis.config.js";
+import { AppError } from "../../utils/custom.error.js";
 
 export async function getFilterProductService({
   category,
@@ -7,6 +8,7 @@ export async function getFilterProductService({
   sortBy,
   minPrice,
   maxPrice,
+  userIp,
 }) {
   let filterQuery = {};
   let sort = {};
@@ -46,26 +48,48 @@ export async function getFilterProductService({
   let data = await client.get(redisKey);
   if (data) return JSON.parse(data);
 
-  
-  let isLock = await client.set("productFilter:reqLock", "lock", {
+  let isLock = await client.set(`lock:${redisKey}`, "lock", {
     NX: true,
     EX: hoyKeyTime / 2,
   });
-  while (isLock === null || isLock === "lock") {
-    isLock = await client.get("productFilter:reqLock");
+
+  let trip = true;
+
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const redisTripper = async (trip) => {
+    if (trip) {
+      let val = await client.get(`lock:${redisKey}`);
+      if (val === "unLock") return true;
+      return null;
+    } else {
+      isLock = await client.set(`lock:${redisKey}`, "lock", {
+        NX: true,
+        EX: hoyKeyTime / 2,
+      });
+    }
+  };
+
+  while (isLock === null) {
+    await sleep(50);
+    let res = await redisTripper(trip);
+    if (res) break;
+    trip = !trip;
   }
 
   data = await client.get(redisKey);
   if (data) return JSON.parse(data);
 
   console.log("Heading toward db");
-
-  const result = await product.getFilterProduct({ filterQuery, sort });
-  await client.set(redisKey, JSON.stringify(result), { EX: hoyKeyTime });
-  await client.set("productFilter:reqLock", "unLock", {
-    EX: hoyKeyTime / 2,
-    NX: true,
-  });
-
-  return result;
+  try {
+    result = await product.getFilterProduct({ filterQuery, sort });
+    await client.set(redisKey, JSON.stringify(result), { EX: hoyKeyTime });
+    await client.set(`lock:${redisKey}`, "unLock", {
+      NX: true,
+      EX: hoyKeyTime / 2,
+    });
+    return result;
+  } catch (error) {
+    await client.del(`lock:${redisKey}`);
+    throw Error;
+  }
 }
