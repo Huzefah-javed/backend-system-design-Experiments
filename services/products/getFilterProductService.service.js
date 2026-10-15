@@ -80,6 +80,7 @@ export async function getFilterProductService({
   if (data) return JSON.parse(data);
 
   console.log("Heading toward db");
+  let result;
   try {
     result = await product.getFilterProduct({ filterQuery, sort });
     await client.set(redisKey, JSON.stringify(result), { EX: hoyKeyTime });
@@ -90,6 +91,8 @@ export async function getFilterProductService({
     return result;
   } catch (error) {
     await client.del(`lock:${redisKey}`);
-    throw Error;
+    throw error;
+  } finally {
+    await client.del(`lock:${redisKey}`);
   }
 }
